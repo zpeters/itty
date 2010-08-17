@@ -16,6 +16,7 @@
 %%%-------------------------------------------------------------------
 %%% Server
 server() ->
+    io:format("Attaching socket to port [~p]~n", [?PORT]),
     {ok, ListenSocket} = gen_tcp:listen(?PORT, 
 					[binary, {packet, http},
 					 {active, false}]),
@@ -26,15 +27,14 @@ server() ->
     io:format("HTTP URI: ~p~n", [HttpUri]),
     io:format("HTTP Version: ~p~n", [HttpVersion]),
     io:format("Sending Response...~n"),
-    Body = "<html><head><title>hello</title></head><body><h1>Hello, world</h1></body></html>",
-    %HttpResponse = "HTTP/1.0 200 OK\r\nDate: Sat, 15 Jan 2000 14:27:12 GMT\r\nServer: itty/0.1\r\nContent-Type: text/HTML\r\nContent-Length: 666\r\n\r\n",
-    %HttpResponse = "HTTP/1.0 200 OK\r\nDate: Sat, 15 Jan 2000 14:27:12 GMT\r\nServer: itty/0.1\r\nContent-Type: text/HTML\r\n\r\n",
-    {Header, NewBody} = gen_header(500, Body),
+    Body = io_lib:format("<html><head><title>hello</title></head><body><h1>Hello, world</h1><hr><b>~p</b></body></html>", [erlang:date()]),
+    {Header, NewBody} = gen_header(200, Body),
     Packet = string:concat(Header,NewBody),
     io:format("Packet: ~p~n", [Packet]),
     ok = gen_tcp:send(RecvSocket, Packet),
     ok = gen_tcp:close(RecvSocket),
-    ok = gen_tcp:close(ListenSocket).
+    ok = gen_tcp:close(ListenSocket),
+    server().
 
 gen_header(Response, Body) ->
     Version = "HTTP/1.0",
