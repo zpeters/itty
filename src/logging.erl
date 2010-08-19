@@ -19,7 +19,8 @@ loop() ->
 	       io:format("Loop got 'stop' signal~n"),
 	       ok;
 	{message, {From, Message}} ->
-	    io:format("YYYYMMDD-HHMMSS - [~p] - ~p~n", [From, Message]),
+	    {{Year,Month,Day},{Hour,Min,Seconds}} = erlang:localtime(),
+	    io:format("~p~p~p-~p:~p:~p - [~s] - ~s~n", [Year, Month, Day, Hour, Min, Seconds, From, Message]),
 	    loop();
 	_Any ->
 	    loop()

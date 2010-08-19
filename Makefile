@@ -31,3 +31,6 @@ ebin:
 
 clean:
 	rm -rf ebin/*.beam ebin/erl_crash.dump erl_crash.dump ebin/*.boot ebin/*.rel ebin/*.script doc/*.html doc/*.css doc/erlang.png doc/edoc-info
+
+help:
+	echo "all, all_boot, start, compile, edoc, shell, run, ebin, clean"

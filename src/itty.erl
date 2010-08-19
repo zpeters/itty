@@ -6,7 +6,7 @@
 %%% Created : 16 Aug 2010 by Zach Peters <zach@thehelpfulhacker.net>
 %%%-------------------------------------------------------------------
 -module(itty).
--compile([export_all]).
+-export([start/0, stop/0, loop/0, serve/0]).
 
 
 %%% Defines
@@ -14,8 +14,37 @@
 
 
 %%%-------------------------------------------------------------------
-%%% Server
-server() ->
+%%% API
+start() ->
+    logging:log(?MODULE, "Starting..."),
+    Pid = spawn(?MODULE, loop, []),
+    register(itty, Pid),
+    ok.
+
+stop() ->
+    logging:log(?MODULE, "Stopping..."),
+    itty ! stop,
+    unregister(itty),
+    ok.
+
+
+%%%-------------------------------------------------------------------
+%%% Internal
+loop() ->
+    receive
+	stop ->
+	    ok;
+	{get, Path} ->
+	    logging:log(?MODULE, io_lib:format("GET '~s'", [Path])),
+	    logging:log(?MODULE, "Spawing server"),
+	    spawn(?MODULE, serve, []);
+	Any ->
+	    logging:log(?MODULE, io_lib:format("Got signal '~s'", [Any])),
+	    loop()
+    end.
+
+
+serve() ->
     io:format("Attaching socket to port [~p]~n", [?PORT]),
     {ok, ListenSocket} = gen_tcp:listen(?PORT, 
 					[binary, {packet, http},
@@ -34,7 +63,7 @@ server() ->
     ok = gen_tcp:send(RecvSocket, Packet),
     ok = gen_tcp:close(RecvSocket),
     ok = gen_tcp:close(ListenSocket),
-    server().
+    ok.
 
 gen_header(Response, Body) ->
     Version = "HTTP/1.0",
