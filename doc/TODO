@@ -1,4 +1,5 @@
 Add unit tests
-Get it to do more than one connection
 Actually serve files
 actual error codes
+break out inot modules
+log ip addressses
