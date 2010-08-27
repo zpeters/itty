@@ -39,8 +39,7 @@ listen_loop(ListeningSocket, Handler) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
 handler(ConnectedSocket) ->
-    Ref = make_ref(),
-    io:format("\t\tHandler [~p] at your service...~n", [Ref]),
+    io:format("\t\tHandler at your service...~n"),
     {ok, {http_request, HttpMethod, HttpUri, HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
     io:format("\t\t\tHttpMethod: ~p~n", [HttpMethod]),
     io:format("\t\t\tHttpUri: ~p~n", [HttpUri]),
@@ -77,7 +76,7 @@ handler(ConnectedSocket) ->
 	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
 	    Packet = string:concat(Header, Body)
     end,
-    io:format("\t\t\tHandler ~p sending packet~n", [Ref]),
+    io:format("\t\t\tHandler sending packet~n"),
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
 	    	    
