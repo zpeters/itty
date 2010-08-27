@@ -4,13 +4,15 @@
 -define(TCP_OPTS, [list,
 		   {active, false},
 		   {packet, http}]).
--define(PORT, 56789).
+-define(PORT, 8080).
 -define(DOCROOT, "/home/zach/tmp").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
     io:format("Initializing server...~n"),
+    io:format("Port: ~p~n", [?PORT]),
+    io:format("TCP Options: ~p~n", [?TCP_OPTS]),
     do_listen(?PORT, ?TCP_OPTS, handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,31 +21,26 @@ start() ->
 do_listen(Port, Opts, Handler) ->
     case gen_tcp:listen(Port, Opts) of
 	{ ok, ListeningSocket } ->
-	    io:format("Server bound to port ~p~n", [Port]),
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
+	    io:format("Error: ~p~n", [E]),
 	    { error, E }
     end.
 
 listen_loop(ListeningSocket, Handler) ->
-    io:format("\tMonitoring listening socket for connections...~n"),
     case gen_tcp:accept(ListeningSocket) of
 	{ ok, ConnectedSocket } ->
-	    io:format("\t\tGot a connection, spawning handler~n"),
 	    spawn(node(), ?MODULE, Handler, [ConnectedSocket]),
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
+	    io:format("Error: ~p~n", [E]),
 	    { error, E }
     end.
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
 handler(ConnectedSocket) ->
-    io:format("\t\tHandler at your service...~n"),
     {ok, {http_request, HttpMethod, HttpUri, HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
-    io:format("\t\t\tHttpMethod: ~p~n", [HttpMethod]),
-    io:format("\t\t\tHttpUri: ~p~n", [HttpUri]),
-    io:format("\t\t\tHttpVersion: ~p~n", [HttpVersion]),
     {_Req, Path} = HttpUri,
     case serve_request(Path) of
 	{ok, {200, Body}} ->
@@ -76,7 +73,6 @@ handler(ConnectedSocket) ->
 	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
 	    Packet = string:concat(Header, Body)
     end,
-    io:format("\t\t\tHandler sending packet~n"),
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
 	    	    
