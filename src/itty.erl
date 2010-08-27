@@ -54,8 +54,6 @@ handler(ConnectedSocket) ->
     ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
     Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
     Packet = string:concat(Header, Body),
-    io:format("\t\t\tHandler ~p sleeping to simulate load~n", [Ref]),
-    timer:sleep(1000),
     io:format("\t\t\tHandler ~p sending packet~n", [Ref]),
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
