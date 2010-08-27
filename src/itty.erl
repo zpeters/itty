@@ -5,13 +5,13 @@
 		   {active, false},
 		   {packet, http}]).
 -define(PORT, 56789).
+-define(DOCROOT, "/home/zach/tmp").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
     io:format("Initializing server...~n"),
     do_listen(?PORT, ?TCP_OPTS, handler).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Control Functions
@@ -45,15 +45,38 @@ handler(ConnectedSocket) ->
     io:format("\t\t\tHttpMethod: ~p~n", [HttpMethod]),
     io:format("\t\t\tHttpUri: ~p~n", [HttpUri]),
     io:format("\t\t\tHttpVersion: ~p~n", [HttpVersion]),
-    Body = "<html><head><title>Hello, world</title><body><h1>" ++ gen_time() ++ "</h1></body></html>",
-    ResponseCode = "200 OK",
-    Version = "HTTP/1.0",
-    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-    Server = "Server: itty/0.1\r\n",
-    ContentType = "Content-Type: text/html\r\n",
-    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
-    Packet = string:concat(Header, Body),
+    {_Req, Path} = HttpUri,
+    case serve_request(Path) of
+	{ok, {200, Body}} ->
+	    ResponseCode = "200 OK",
+	    Version = "HTTP/1.0",
+	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+	    Server = "Server: itty/0.1\r\n",
+	    ContentType = "Content-Type: text/html\r\n",
+	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+	    Packet = string:concat(Header, Body);
+	{error, {404, not_found}} ->
+	    Body = "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>",
+	    ResponseCode = "404 Not Found",
+	    Version = "HTTP/1.0",
+	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+	    Server = "Server: itty/0.1\r\n",
+	    ContentType = "Content-Type: text/html\r\n",
+	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+	    Packet = string:concat(Header, Body);
+	{error, Error} ->
+	    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
+	    ResponseCode = "500 FUUUUuuuu",
+	    Version = "HTTP/1.0",
+	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+	    Server = "Server: itty/0.1\r\n",
+	    ContentType = "Content-Type: text/html\r\n",
+	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+	    Packet = string:concat(Header, Body)
+    end,
     io:format("\t\t\tHandler ~p sending packet~n", [Ref]),
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
@@ -65,3 +88,20 @@ gen_time() ->
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
     Date.
     
+serve_request(UriRequest) ->
+    case UriRequest of 
+	[] ->
+	    Request = ?DOCROOT ++ "/index.html";
+	"/" ->
+	    Request = ?DOCROOT ++ "/index.html";
+	_Any ->
+	    Request = ?DOCROOT ++ UriRequest
+    end,
+    io:format("Request: ~p~n", [Request]),
+    case file:read_file(Request) of
+	{ok, File} ->
+	    FileContents = binary_to_list(File),
+	    {ok, {200, FileContents}};
+	_ ->
+	    {error, {404, not_found}}
+    end.

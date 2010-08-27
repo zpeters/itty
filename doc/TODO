@@ -1,5 +1,5 @@
 Add unit tests
-Actually serve files
-actual error codes
+actual error codes (clean up the case seciont it only does 200or 404 right now)
 break out inot modules
 log ip addressses
+serve and display binaries
