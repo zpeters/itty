@@ -40,7 +40,7 @@ listen_loop(ListeningSocket, Handler) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
 handler(ConnectedSocket) ->
-    {ok, {http_request, HttpMethod, HttpUri, HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
+    {ok, {http_request, _HttpMethod, HttpUri, _HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
     {_Req, Path} = HttpUri,
     case serve_request(Path) of
 	{ok, {200, Body}} ->
@@ -48,9 +48,8 @@ handler(ConnectedSocket) ->
 	    Version = "HTTP/1.0",
 	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
 	    Server = "Server: itty/0.1\r\n",
-	    ContentType = "Content-Type: text/html\r\n",
 	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+	    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
 	    Packet = string:concat(Header, Body);
 	{error, {404, not_found}} ->
 	    Body = "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>",
