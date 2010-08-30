@@ -40,9 +40,9 @@ listen_loop(ListeningSocket, Handler) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
 handler(ConnectedSocket) ->
-    {ok, {http_request, _HttpMethod, HttpUri, _HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
-    {_Req, Path} = HttpUri,
-    case serve_request(Path) of
+    {ok, {http_request, HttpMethod, HttpUri, HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
+    {_HttpReq, HttpPath} = HttpUri,
+    case serve_request(HttpPath, HttpMethod, HttpVersion) of
 	{ok, {200, Body}} ->
 	    ResponseCode = "200 OK",
 	    Version = "HTTP/1.0",
@@ -82,19 +82,19 @@ gen_time() ->
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
     Date.
     
-serve_request(UriRequest) ->
-    case UriRequest of 
+serve_request(HttpPath, HttpMethod, HttpVersion) ->
+    case HttpPath of 
 	[] ->
 	    Request = ?DOCROOT ++ "/index.html";
 	"/" ->
 	    Request = ?DOCROOT ++ "/index.html";
 	_Any ->
-	    Request = ?DOCROOT ++ UriRequest
+	    Request = ?DOCROOT ++ HttpPath
     end,
-    io:format("Request: ~p~n", [Request]),
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
+	    io:format('IP - userid [date] \"~s ~s ~s\" 200 ~p~n', [HttpMethod, HttpPath, HttpVersion, string:len(FileContents)]),
 	    {ok, {200, FileContents}};
 	_ ->
 	    {error, {404, not_found}}

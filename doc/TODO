@@ -1,3 +1,4 @@
 actual error codes (clean up the case seciont it only does 200or 404 right now)
 break out inot modules
-log ip addressses
+log in CLF
+    127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
