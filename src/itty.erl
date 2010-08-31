@@ -1,10 +1,10 @@
 -module(itty).
--export([start/0, handler/1, gen_time/0]).
+-export([start/0, handler/1, gen_time/0, time_zone/0, time_zone/1]).
 
 -define(TCP_OPTS, [list,
 		   {active, false},
 		   {packet, http}]).
--define(PORT, 8080).
+-define(PORT, 8000).
 -define(DOCROOT, "/home/zach/tmp").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,14 +74,7 @@ handler(ConnectedSocket) ->
     end,
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
-	    	    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Utility Functions
-gen_time() ->
-    {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
-    Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
-    Date.
-    
+
 serve_request(HttpPath, HttpMethod, HttpVersion) ->
     case HttpPath of 
 	[] ->
@@ -94,8 +87,44 @@ serve_request(HttpPath, HttpMethod, HttpVersion) ->
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
-	    io:format('IP - userid [date] \"~s ~s ~s\" 200 ~p~n', [HttpMethod, HttpPath, HttpVersion, string:len(FileContents)]),
+	    BunkIpAddress = "6.6.6.6",
+	    ClientIdentity = "-",
+	    ClientUsername = "-",
+	    {Year, Month, Day} = date(),
+	    {Hour, Minute, Second} = time(),
+	    TimeZone = time_zone(),
+	    {MajorVersion, MinorVersion} = HttpVersion,
+	    BodyLength = string:len(FileContents),
+	    io:format("LOG: ~s ~s ~s [~p-~p-~p ~p:~p:~p ~s] \"~s ~s HTTP/~p.~p\" ~p ~p~n", 
+		      [BunkIpAddress, ClientIdentity, ClientUsername,
+		       Year, Month, Day,
+		       Hour, Minute, Second, 
+		       TimeZone,
+		      HttpMethod, HttpPath,
+		      MajorVersion, MinorVersion,
+		      200, BodyLength]),
 	    {ok, {200, FileContents}};
 	_ ->
 	    {error, {404, not_found}}
     end.
+
+	    	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Utility Functions
+gen_time() ->
+    {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
+    Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
+    Date.
+
+%% Seen here - http://www.erlang.org/pipermail/erlang-questions/2006-December/024289.html
+time_zone() ->
+    Time = erlang:universaltime(),
+    LocalTime = calendar:universal_time_to_local_time(Time),
+    DiffSecs = calendar:datetime_to_gregorian_seconds(LocalTime) -
+	calendar:datetime_to_gregorian_seconds(Time),
+    time_zone((DiffSecs/3600)*100).
+time_zone(Val) when Val < 0 ->
+    io_lib:format("-~4..0w", [trunc(abs(Val))]);
+time_zone(Val) when Val >= 0 ->		           
+    io_lib:format("+~4..0w", [trunc(abs(Val))]).
+
