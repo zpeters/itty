@@ -40,40 +40,44 @@ listen_loop(ListeningSocket, Handler) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
 handler(ConnectedSocket) ->
-    {ok, {http_request, HttpMethod, HttpUri, HttpVersion}} = gen_tcp:recv(ConnectedSocket, 0),
-    {_HttpReq, HttpPath} = HttpUri,
-    case serve_request(HttpPath, HttpMethod, HttpVersion) of
-	{ok, {200, Body}} ->
-	    ResponseCode = "200 OK",
-	    Version = "HTTP/1.0",
-	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-	    Server = "Server: itty/0.1\r\n",
-	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-	    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
-	    Packet = string:concat(Header, Body);
-	{error, {404, not_found}} ->
-	    Body = "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>",
-	    ResponseCode = "404 Not Found",
-	    Version = "HTTP/1.0",
-	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-	    Server = "Server: itty/0.1\r\n",
-	    ContentType = "Content-Type: text/html\r\n",
-	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
-	    Packet = string:concat(Header, Body);
-	{error, Error} ->
-	    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
-	    ResponseCode = "500 FUUUUuuuu",
-	    Version = "HTTP/1.0",
-	    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-	    Server = "Server: itty/0.1\r\n",
-	    ContentType = "Content-Type: text/html\r\n",
-	    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-	    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
-	    Packet = string:concat(Header, Body)
-    end,
-    gen_tcp:send(ConnectedSocket, Packet),
-    gen_tcp:close(ConnectedSocket).
+    case gen_tcp:recv(ConnectedSocket, 0) of
+	{ok, {http_request, HttpMethod, HttpUri, HttpVersion}} ->
+	    {_HttpReq, HttpPath} = HttpUri,
+	    case serve_request(HttpPath, HttpMethod, HttpVersion) of
+		{ok, {200, Body}} ->
+		    ResponseCode = "200 OK",
+		    Version = "HTTP/1.0",
+		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+		    Server = "Server: itty/0.1\r\n",
+		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+		    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
+		    Packet = string:concat(Header, Body);
+		{error, {404, not_found}} ->
+		    Body = "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>",
+		    ResponseCode = "404 Not Found",
+		    Version = "HTTP/1.0",
+		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+		    Server = "Server: itty/0.1\r\n",
+		    ContentType = "Content-Type: text/html\r\n",
+		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+		    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+		    Packet = string:concat(Header, Body);
+		{error, Error} ->
+		    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
+		    ResponseCode = "500 FUUUUuuuu",
+		    Version = "HTTP/1.0",
+		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
+		    Server = "Server: itty/0.1\r\n",
+		    ContentType = "Content-Type: text/html\r\n",
+		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+		    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
+		    Packet = string:concat(Header, Body)
+	    end,
+	    gen_tcp:send(ConnectedSocket, Packet),
+	    gen_tcp:close(ConnectedSocket);
+	Any ->
+	    io:format("I got request: ~p~n", [Any])
+    end.
 
 serve_request(HttpPath, HttpMethod, HttpVersion) ->
     case HttpPath of 
