@@ -1,0 +1,15 @@
+* itty - The very small erlang webserver
+** Hello
+Itty was written as a way for me to learn erlang.  It's aim is to eventually me a complete, but very lean webserver.  The focus is not necessarily on speed, performance or security, but on a clear design that is easy to read through and understand.
+
+** Eventually
+I would like to include tutorials to take the reader through the step by step process of building up the webserver from its embryonic single process, to multiple processes working together to create a functioning webserver
+
+** For Now
+Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
+
+** Todo
+- [ ] Use error codes (clean up the case section - it only does 200 or 404 right now)
+- [ ] break out into separate modules
+- [ ] log in actual CLF
+- [ ] need ot clean up the relationship between "handler" and "serve_request"
