@@ -11,5 +11,7 @@ Thanks for checking this out.  Feel free to send your comments to zach@thehelpfu
 ** Todo
 - [ ] Use error codes (clean up the case section - it only does 200 or 404 right now)
 - [ ] break out into separate modules
-- [ ] log in actual CLF
 - [ ] need ot clean up the relationship between "handler" and "serve_request"
+- [ ] yep probably need a content type lol
+** Done
+- [X] log in actual CLF - ehhh i implemented CEF (Close Enough Format)

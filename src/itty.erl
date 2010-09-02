@@ -43,7 +43,8 @@ handler(ConnectedSocket) ->
     case gen_tcp:recv(ConnectedSocket, 0) of
 	{ok, {http_request, HttpMethod, HttpUri, HttpVersion}} ->
 	    {_HttpReq, HttpPath} = HttpUri,
-	    case serve_request(HttpPath, HttpMethod, HttpVersion) of
+	    {ok, {RequestorIP, _ClientPort}} = inet:peername(ConnectedSocket),
+	    case serve_request(RequestorIP, HttpPath, HttpMethod, HttpVersion) of
 		{ok, {200, Body}} ->
 		    ResponseCode = "200 OK",
 		    Version = "HTTP/1.0",
@@ -79,7 +80,7 @@ handler(ConnectedSocket) ->
 	    io:format("I got request: ~p~n", [Any])
     end.
 
-serve_request(HttpPath, HttpMethod, HttpVersion) ->
+serve_request(RequestorIP, HttpPath, HttpMethod, HttpVersion) ->
     case HttpPath of 
 	[] ->
 	    Request = ?DOCROOT ++ "/index.html";
@@ -91,7 +92,6 @@ serve_request(HttpPath, HttpMethod, HttpVersion) ->
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
-	    BunkIpAddress = "6.6.6.6",
 	    ClientIdentity = "-",
 	    ClientUsername = "-",
 	    {Year, Month, Day} = date(),
@@ -99,8 +99,8 @@ serve_request(HttpPath, HttpMethod, HttpVersion) ->
 	    TimeZone = time_zone(),
 	    {MajorVersion, MinorVersion} = HttpVersion,
 	    BodyLength = string:len(FileContents),
-	    io:format("LOG: ~s ~s ~s [~p-~p-~p ~p:~p:~p ~s] \"~s ~s HTTP/~p.~p\" ~p ~p~n", 
-		      [BunkIpAddress, ClientIdentity, ClientUsername,
+	    io:format("~p ~s ~s [~p-~p-~p ~p:~p:~p ~s] \"~s ~s HTTP/~p.~p\" ~p ~p~n", 
+		      [RequestorIP, ClientIdentity, ClientUsername,
 		       Year, Month, Day,
 		       Hour, Minute, Second, 
 		       TimeZone,
@@ -131,4 +131,3 @@ time_zone(Val) when Val < 0 ->
     io_lib:format("-~4..0w", [trunc(abs(Val))]);
 time_zone(Val) when Val >= 0 ->		           
     io_lib:format("+~4..0w", [trunc(abs(Val))]).
-
