@@ -1,5 +1,5 @@
 -module(itty).
--export([start/0, handler/1, gen_time/0, time_zone/0, time_zone/1]).
+-export([start/0, handler/1, gen_header/1, gen_header/2, gen_time/0, time_zone/0, time_zone/1]).
 
 -define(TCP_OPTS, [list,
 		   {active, false},
@@ -7,6 +7,8 @@
 -define(PORT, 8000).
 -define(DOCROOT, "/home/zach/tmp").
 
+-define(BODY_404, "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>").
+-define(BODY_500, "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>Unknown error</body></html>").
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
@@ -39,6 +41,38 @@ listen_loop(ListeningSocket, Handler) ->
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handler   
+
+
+gen_header({error, {500, Error}}) ->
+    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
+    gen_header(500, Body);
+gen_header({error, ResponseCode}) ->
+    case ResponseCode of
+	{404, not_found} ->
+	    gen_header(404, ?BODY_404);
+	_Other ->
+	    gen_header(500, ?BODY_500)
+    end.
+gen_header(ResponseCode, Body) ->
+    case ResponseCode of
+	200 ->
+	    ResponseCodeString = "200 OK";
+	404 ->
+	    ResponseCodeString = "404 Not Found";
+	_Any ->
+	    ResponseCodeString = "500 FUUUuuu"
+    end,
+    Version = "HTTP/1.0",
+    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCodeString]),
+    Server = "Server: itty/0.1\r\n",
+    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
+    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
+    Header.
+
+gen_packet(Response, Body) ->
+    Header = gen_header(Response, Body),
+    string:concat(Header, Body).
+
 handler(ConnectedSocket) ->
     case gen_tcp:recv(ConnectedSocket, 0) of
 	{ok, {http_request, HttpMethod, HttpUri, HttpVersion}} ->
@@ -46,33 +80,11 @@ handler(ConnectedSocket) ->
 	    {ok, {RequestorIP, _ClientPort}} = inet:peername(ConnectedSocket),
 	    case serve_request(RequestorIP, HttpPath, HttpMethod, HttpVersion) of
 		{ok, {200, Body}} ->
-		    ResponseCode = "200 OK",
-		    Version = "HTTP/1.0",
-		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-		    Server = "Server: itty/0.1\r\n",
-		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-		    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
-		    Packet = string:concat(Header, Body);
+		    Packet = gen_packet(200, Body);
 		{error, {404, not_found}} ->
-		    Body = "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>",
-		    ResponseCode = "404 Not Found",
-		    Version = "HTTP/1.0",
-		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-		    Server = "Server: itty/0.1\r\n",
-		    ContentType = "Content-Type: text/html\r\n",
-		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-		    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
-		    Packet = string:concat(Header, Body);
+		    Packet = gen_packet({error, {404, not_found}}, ?BODY_404);
 		{error, Error} ->
-		    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
-		    ResponseCode = "500 FUUUUuuuu",
-		    Version = "HTTP/1.0",
-		    HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCode]),
-		    Server = "Server: itty/0.1\r\n",
-		    ContentType = "Content-Type: text/html\r\n",
-		    ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-		    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentType, ContentLength]),
-		    Packet = string:concat(Header, Body)
+		    Packet = gen_packet({error, {500, Error}}, ?BODY_500)
 	    end,
 	    gen_tcp:send(ConnectedSocket, Packet),
 	    gen_tcp:close(ConnectedSocket);
