@@ -9,10 +9,13 @@ I would like to include tutorials to take the reader through the step by step pr
 Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
 
 ** Todo
-- [ ] use records for datatypes
+- [ ] do something better with the template 404 and 500 pages
+- [ ] the actual codes for 404/500 appear to be passed around too much, look into this
+- [ ] actually use status 500 for something
 - [ ] break out into separate modules
 - [ ] need ot clean up the relationship between "handler" and "serve_request"
 - [ ] yep probably need a content type lol
 ** Done
+- [X] use records for datatypes
 - [X] Use error codes
 - [X] log in actual CLF - ehhh i implemented CEF (Close Enough Format)
