@@ -9,9 +9,10 @@ I would like to include tutorials to take the reader through the step by step pr
 Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
 
 ** Todo
-- [ ] Use error codes (clean up the case section - it only does 200 or 404 right now)
+- [ ] use records for datatypes
 - [ ] break out into separate modules
 - [ ] need ot clean up the relationship between "handler" and "serve_request"
 - [ ] yep probably need a content type lol
 ** Done
+- [X] Use error codes
 - [X] log in actual CLF - ehhh i implemented CEF (Close Enough Format)

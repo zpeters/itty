@@ -104,29 +104,35 @@ serve_request(RequestorIP, HttpPath, HttpMethod, HttpVersion) ->
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
-	    ClientIdentity = "-",
-	    ClientUsername = "-",
-	    {Year, Month, Day} = date(),
-	    {Hour, Minute, Second} = time(),
-	    TimeZone = time_zone(),
-	    {MajorVersion, MinorVersion} = HttpVersion,
 	    BodyLength = string:len(FileContents),
-	    io:format("~p ~s ~s [~p-~p-~p ~p:~p:~p ~s] \"~s ~s HTTP/~p.~p\" ~p ~p~n", 
-		      [RequestorIP, ClientIdentity, ClientUsername,
-		       Year, Month, Day,
-		       Hour, Minute, Second, 
-		       TimeZone,
-		      HttpMethod, HttpPath,
-		      MajorVersion, MinorVersion,
-		      200, BodyLength]),
+	    log_request(RequestorIP, "-", "-", HttpMethod, HttpPath, HttpVersion, 200, BodyLength),
 	    {ok, {200, FileContents}};
 	_ ->
+	    BodyLength = string:len(?BODY_404),
+	    log_request(RequestorIP, "-", "-", HttpMethod, HttpPath, HttpVersion, 404, BodyLength),
 	    {error, {404, not_found}}
     end.
 
 	    	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility Functions
+log_request(RequestorIP, ClientIdentity, ClientUsername,
+	   HttpMethod, HttpPath,
+	   HttpVersion,
+	   StatusCode, BodyLength) ->
+	    {Year, Month, Day} = date(),
+	    {Hour, Minute, Second} = time(),
+	    TimeZone = time_zone(),
+	    {MajorVersion, MinorVersion} = HttpVersion,    
+    io:format("~p ~s ~s [~p-~p-~p ~p:~p:~p ~s] \"~s ~s HTTP/~p.~p\" ~p ~p~n", 
+	      [RequestorIP, ClientIdentity, ClientUsername,
+	       Year, Month, Day,
+	       Hour, Minute, Second, 
+	       TimeZone,
+	       HttpMethod, HttpPath,
+	       MajorVersion, MinorVersion,
+	       StatusCode, BodyLength]).
+	
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
