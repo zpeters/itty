@@ -1,6 +1,7 @@
 -module(itty).
 -export([start/0, handler/1, 
 	 gen_header/1, gen_header/2, gen_time/0, 
+	 get_index/1,
 	 time_zone/0, time_zone/1,
 	gen_http_request_record/2]).
 
@@ -9,6 +10,8 @@
 		   {packet, http}]).
 -define(PORT, 8000).
 -define(DOCROOT, "/home/zach/tmp").
+
+-define(DIRECTORYINDEX, 'index.html').
 
 -define(BODY_404, "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>").
 -define(BODY_500, "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>Unknown error</body></html>").
@@ -84,14 +87,7 @@ handler(ConnectedSocket) ->
     gen_tcp:close(ConnectedSocket).
 
 serve_request(RequestRecord) ->
-    case RequestRecord#http_request.http_path of 
-	[] ->
-	    Request = ?DOCROOT ++ "/index.html";
-	"/" ->
-	    Request = ?DOCROOT ++ "/index.html";
-	_Any ->
-	    Request = ?DOCROOT ++ RequestRecord#http_request.http_path
-    end,
+    Request = ?DOCROOT ++ get_index(RequestRecord#http_request.http_path),
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
@@ -107,6 +103,21 @@ serve_request(RequestRecord) ->
 	    	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% HTTP Utility Functions
+
+% tests Path to see if we are requesting a resource
+% if not we will request with DIRECTORYINDEX appended to the end
+get_index(Path) ->
+    Len = string:len(Path),
+    LastChar = lists:sublist(Path,Len,Len),
+    case LastChar of 
+	"/" ->
+	    NewPath = Path ++ ?DIRECTORYINDEX;
+	_Any ->
+	    NewPath = Path
+    end,
+    NewPath.
+
+
 gen_header({error, {500, Error}}) ->
     Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
     gen_header(500, Body);
