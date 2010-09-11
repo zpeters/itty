@@ -10,6 +10,7 @@
 		   {packet, http}]).
 -define(PORT, 8000).
 -define(DOCROOT, "/home/zach/tmp").
+-define(LOGFILE, "itty.log").
 
 -define(DIRECTORYINDEX, 'index.html').
 
@@ -148,26 +149,29 @@ gen_packet(Response, Body) ->
     Header = gen_header(Response, Body),
     string:concat(Header, Body).
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility Functions
 log_request(RequestRecord, StatusCode, BodyLength) ->
+    {ok, LogFile} = file:open(?LOGFILE, [append]),
     {Year, Month, Day} = date(),
     {Hour, Minute, Second} = time(),
-    io:format("~p ~p ~p ~p [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p~n", 
-	      [
-	       RequestRecord#http_request.requestor_ip,
-	       RequestRecord#http_request.client_identity,
-	       RequestRecord#http_request.client_username,
-	       RequestRecord#http_request.requestor_ip,
-	       Year, Month, Day,
-	       Hour, Minute, Second,
-	       time_zone(),
-	       RequestRecord#http_request.http_method,
-	       RequestRecord#http_request.http_path,
-	       RequestRecord#http_request.http_ver_maj,
-	       RequestRecord#http_request.http_ver_min,
-	       StatusCode, BodyLength]).
+    LogString = io_lib:format("~p ~p ~p ~p [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p~n", 
+			      [
+			       RequestRecord#http_request.requestor_ip,
+			       RequestRecord#http_request.client_identity,
+			       RequestRecord#http_request.client_username,
+			       RequestRecord#http_request.requestor_ip,
+			       Year, Month, Day,
+			       Hour, Minute, Second,
+			       time_zone(),
+			       RequestRecord#http_request.http_method,
+			       RequestRecord#http_request.http_path,
+			       RequestRecord#http_request.http_ver_maj,
+			       RequestRecord#http_request.http_ver_min,
+			       StatusCode, BodyLength]),
+    io:format("~s", [LogString]),
+    io:fwrite(LogFile, "~s", [LogString]),
+    file:close(LogFile).
 
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
