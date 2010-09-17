@@ -3,13 +3,14 @@
 	 gen_header/1, gen_header/2, gen_time/0, 
 	 get_index/1,
 	 time_zone/0, time_zone/1,
+	 handle_error/1,
 	gen_http_request_record/2]).
 
 -define(TCP_OPTS, [list,
 		   {active, false},
 		   {packet, http}]).
--define(PORT, 8000).
--define(DOCROOT, "/home/zach/tmp").
+-define(PORT, 80).
+-define(DOCROOT, "/srv/http").
 -define(LOGFILE, "itty.log").
 
 -define(DIRECTORYINDEX, 'index.html').
@@ -44,7 +45,7 @@ do_listen(Port, Opts, Handler) ->
 	{ ok, ListeningSocket } ->
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
-	    { error, E }
+	    handle_error(E)
     end.
 
 listen_loop(ListeningSocket, Handler) ->
@@ -53,7 +54,7 @@ listen_loop(ListeningSocket, Handler) ->
 	    spawn(node(), ?MODULE, Handler, [ConnectedSocket]),
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
-	    { error, E }
+	    handle_error(E)
     end.
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -189,3 +190,6 @@ time_zone(Val) when Val < 0 ->
     io_lib:format("-~4..0w", [trunc(abs(Val))]);
 time_zone(Val) when Val >= 0 ->		           
     io_lib:format("+~4..0w", [trunc(abs(Val))]).
+
+handle_error(Error) ->
+    io:format("Got error: ~p~n", [Error]).
