@@ -6,6 +6,9 @@
 	 handle_error/1,
 	gen_http_request_record/2]).
 
+
+-define(CONFIG, itty_config:start()).
+
 -define(TCP_OPTS, [list,
 		   {active, false},
 		   {packet, http}]).
@@ -33,9 +36,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
-    io:format("Port: ~p~n", [?PORT]),
-    io:format("TCP Options: ~p~n", [?TCP_OPTS]),
-    do_listen(?PORT, ?TCP_OPTS, handler).
+    io:format("Port: ~p~n", [itty_config:get(port, ?CONFIG)]),
+    io:format("TCP Options: ~p~n", [itty_config:get(tcp_options, ?CONFIG)]),
+    do_listen(itty_config:get(port, ?CONFIG), itty_config:get(tcp_options, ?CONFIG), handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Control Functions
@@ -81,15 +84,15 @@ handler(ConnectedSocket) ->
 	{ok, {200, Body}} ->
 	    Packet = gen_packet(200, Body);
 	{error, {404, not_found}} ->
-	    Packet = gen_packet({error, {404, not_found}}, ?BODY_404);
+	    Packet = gen_packet({error, {404, not_found}}, itty_config:get(body_404, ?CONFIG));
 	{ error, _Any } ->
-	    Packet = gen_packet({error, {500, not_found}}, ?BODY_500)
+	    Packet = gen_packet({error, {500, not_found}}, itty_config:get(body_500, ?CONFIG))
     end,
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
 
 serve_request(RequestRecord) ->
-    Request = ?DOCROOT ++ get_index(RequestRecord#http_request.http_path),
+    Request = itty_config:get(docroot, ?CONFIG) ++ get_index(RequestRecord#http_request.http_path),
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
@@ -97,7 +100,7 @@ serve_request(RequestRecord) ->
 	    log_request(RequestRecord, 200, BodyLength),
 	    {ok, {200, FileContents}};
 	_ ->
-	    BodyLength = string:len(?BODY_404),
+	    BodyLength = string:len(itty_config:get(body_404, ?CONFIG)),
 	    log_request(RequestRecord, 404, BodyLength),
 	    {error, {404, not_found}}
     end.
@@ -113,7 +116,7 @@ get_index(Path) ->
     LastChar = lists:sublist(Path,Len,Len),
     case LastChar of 
 	"/" ->
-	    NewPath = Path ++ ?DIRECTORYINDEX;
+	    NewPath = Path ++ itty_config:get(directory_index, ?CONFIG);
 	_Any ->
 	    NewPath = Path
     end,
@@ -126,9 +129,9 @@ gen_header({error, {500, Error}}) ->
 gen_header({error, ResponseCode}) ->
     case ResponseCode of
 	{404, not_found} ->
-	    gen_header(404, ?BODY_404);
+	    gen_header(404, itty_config:get(body_404, ?CONFIG));
 	_Other ->
-	    gen_header(500, ?BODY_500)
+	    gen_header(500, itty_config:get(body_500, ?CONFIG))
     end.
 gen_header(ResponseCode, Body) ->
     case ResponseCode of
@@ -153,7 +156,7 @@ gen_packet(Response, Body) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility Functions
 log_request(RequestRecord, StatusCode, BodyLength) ->
-    {ok, LogFile} = file:open(?LOGFILE, [append]),
+    {ok, LogFile} = file:open(itty_config:get(logfile, ?CONFIG), [append]),
     {Year, Month, Day} = date(),
     {Hour, Minute, Second} = time(),
     LogString = io_lib:format("~p ~p ~p ~p [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p~n", 

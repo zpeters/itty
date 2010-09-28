@@ -4,27 +4,15 @@
 -define(CONFIG_FILE, "/home/zach/Projects/itty/application.cfg").
 
 start() ->
-    Pid = spawn(node(), ?MODULE, loop, []),
-    register(config, Pid).
-
-stop() ->
-    config ! stop.
-
-loop(Config) ->
-    receive
-	start ->
-	    {ok, Config} = file:consult(?CONFIG_FILE),
-	    loop(Config);
-	stop ->
-	    ok;
-	status ->
-	    io:format("Config: ~p~n", [Config]),
-	    loop(Config);
-	Any ->
-	    io:format("I got signal: ~p~n", [Any]),
-	    loop(config)
-    end.
-    
+    {ok, Config} = file:consult(?CONFIG_FILE),
+    Config.
+	  
+get(_Key, []) ->
+    {error, not_found};
+get(Key, [{Key, Value} | _Config]) ->
+    Value;
+get(Key, [{_Other, _Value} | Config]) ->
+    get(Key, Config).
 	    
 
 
