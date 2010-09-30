@@ -1,25 +1,9 @@
 -module(itty).
--export([start/0, handler/1, 
-	 gen_header/1, gen_header/2, gen_time/0, 
-	 get_index/1,
-	 time_zone/0, time_zone/1,
-	 handle_error/1,
-	gen_http_request_record/2]).
+-compile([export_all]).
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Defines
 -define(CONFIG, config:start()).
-
--define(TCP_OPTS, [list,
-		   {active, false},
-		   {packet, http}]).
--define(PORT, 80).
--define(DOCROOT, "/srv/http").
--define(LOGFILE, "itty.log").
-
--define(DIRECTORYINDEX, 'index.html').
-
--define(BODY_404, "<html><head><title>404 Not Found</title></head><body>404 - LOL</body></html>").
--define(BODY_500, "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>Unknown error</body></html>").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% records
@@ -81,8 +65,8 @@ handler(ConnectedSocket) ->
     {ok, {RequestorIP, _ClientPort}} = inet:peername(ConnectedSocket),
     RequestRecord = gen_http_request_record(HttpRequest, RequestorIP),
     case serve_request(RequestRecord) of
-	{ok, {200, Body}} ->
-	    Packet = gen_packet(200, Body);
+	{ok, {200, Body, MimeType}} ->
+	    Packet = gen_packet(200, Body, MimeType);
 	{error, {404, not_found}} ->
 	    Packet = gen_packet({error, {404, not_found}}, config:get(body_404, ?CONFIG));
 	{ error, _Any } ->
@@ -97,8 +81,9 @@ serve_request(RequestRecord) ->
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
 	    BodyLength = string:len(FileContents),
+	    MimeType = mime:guess_mime(Request),
 	    log_request(RequestRecord, 200, BodyLength),
-	    {ok, {200, FileContents}};
+	    {ok, {200, FileContents, MimeType}};
 	_ ->
 	    BodyLength = string:len(config:get(body_404, ?CONFIG)),
 	    log_request(RequestRecord, 404, BodyLength),
@@ -116,41 +101,43 @@ get_index(Path) ->
     LastChar = lists:sublist(Path,Len,Len),
     case LastChar of 
 	"/" ->
-	    NewPath = Path ++ config:get(directory_index, ?CONFIG);
+	    Index = atom_to_list(config:get(directory_index, ?CONFIG)),
+	    NewPath = Path ++ Index;
 	_Any ->
 	    NewPath = Path
     end,
     NewPath.
 
 
-gen_header({error, {500, Error}}) ->
-    Body = "<html><head><title>500 FUUUUuuuu</title></head><body>500 - FUUUUuuuu<br>" ++ Error ++ "</body></html>",
-    gen_header(500, Body);
-gen_header({error, ResponseCode}) ->
+gen_header({error, ResponseCode}, MimeType) ->
     case ResponseCode of
 	{404, not_found} ->
-	    gen_header(404, config:get(body_404, ?CONFIG));
+	    gen_header(404, config:get(body_404, ?CONFIG), MimeType);
 	_Other ->
-	    gen_header(500, config:get(body_500, ?CONFIG))
+	    gen_header(500, config:get(body_500, ?CONFIG), MimeType)
     end.
-gen_header(ResponseCode, Body) ->
+gen_header(ResponseCode, Body, MimeType) ->
     case ResponseCode of
 	200 ->
 	    ResponseCodeString = "200 OK";
 	404 ->
 	    ResponseCodeString = "404 Not Found";
 	_Any ->
-	    ResponseCodeString = "500 FUUUuuu"
+	    ResponseCodeString = "500 FFFFFFFUUUUUUUUUUUU"
     end,
     Version = "HTTP/1.0",
     HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCodeString]),
     Server = "Server: itty/0.1\r\n",
+    ContentType = io_lib:format("Content-Type: ~s\r\n", [MimeType]),
     ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
-    Header = io_lib:format("~s~s~s\r\n", [HttpResponse, Server, ContentLength]),
+    Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentLength, ContentType]),
     Header.
 
 gen_packet(Response, Body) ->
     Header = gen_header(Response, Body),
+    string:concat(Header, Body).
+gen_packet(Response, Body, MimeType) ->
+    Header = gen_header(Response, Body, MimeType),
     string:concat(Header, Body).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -173,7 +160,6 @@ log_request(RequestRecord, StatusCode, BodyLength) ->
 			       RequestRecord#http_request.http_ver_maj,
 			       RequestRecord#http_request.http_ver_min,
 			       StatusCode, BodyLength]),
-    io:format("~s", [LogString]),
     io:fwrite(LogFile, "~s", [LogString]),
     file:close(LogFile).
 
