@@ -1,4 +1,4 @@
--module(itty_config).
+-module(config).
 -compile([export_all]).
 
 -define(CONFIG_FILE, "/home/zach/Projects/itty/application.cfg").

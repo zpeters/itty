@@ -1,5 +1,5 @@
 %% Technique/Code borrowed form mochiweb source
--module(itty_mime).
+-module(mime).
 -export([from_extension/1, guess_mime/1]).
 
 from_extension(".html") ->
