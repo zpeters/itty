@@ -20,8 +20,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
-    io:format("Port: ~p~n", [config:get(port, ?CONFIG)]),
-    io:format("TCP Options: ~p~n", [config:get(tcp_options, ?CONFIG)]),
+    BootString = io_lib:format("Itty ~p starting on port: ~p",
+			       [config:get(version, ?CONFIG),
+				config:get(port, ?CONFIG)]),
+    log_event(BootString),
     do_listen(config:get(port, ?CONFIG), config:get(tcp_options, ?CONFIG), handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,15 +145,15 @@ gen_packet(Response, Body, MimeType) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility Functions
 log_request(RequestRecord, StatusCode, BodyLength) ->
-    {ok, LogFile} = file:open(config:get(logfile, ?CONFIG), [append]),
+    LogFile = config:get(http_logfile, ?CONFIG),
     {Year, Month, Day} = date(),
     {Hour, Minute, Second} = time(),
-    LogString = io_lib:format("~p ~p ~p ~p [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p~n", 
+    LogString = io_lib:format("~s ~p ~p ~s [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p", 
 			      [
-			       RequestRecord#http_request.requestor_ip,
+			       ip_tuple_to_string(RequestRecord#http_request.requestor_ip),
 			       RequestRecord#http_request.client_identity,
 			       RequestRecord#http_request.client_username,
-			       RequestRecord#http_request.requestor_ip,
+			       ip_tuple_to_string(RequestRecord#http_request.requestor_ip),
 			       Year, Month, Day,
 			       Hour, Minute, Second,
 			       time_zone(),
@@ -160,13 +162,33 @@ log_request(RequestRecord, StatusCode, BodyLength) ->
 			       RequestRecord#http_request.http_ver_maj,
 			       RequestRecord#http_request.http_ver_min,
 			       StatusCode, BodyLength]),
-    io:fwrite(LogFile, "~s", [LogString]),
+    log(LogString, LogFile).
+
+log_event(String) ->
+    LogFile = config:get(event_logfile, ?CONFIG),
+    {Year, Month, Day} = date(),
+    {Hour, Minute, Second} = time(),
+    LogString = io_lib:format("~p~p~p ~p:~p:~p - ~s",
+			      [
+			       Year, Month, Day,
+			       Hour, Minute, Second,
+			       String]),
+    log(LogString, LogFile).
+			       
+log(String, File) ->
+    {ok, LogFile} = file:open(File, [append]),
+    io:fwrite(LogFile, "~s~n", [String]),
     file:close(LogFile).
 
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
     Date.
+
+ip_tuple_to_string(IpTuple) ->
+    {Octet1, Octet2, Octet3, Octet4} = IpTuple,
+    IpAddress = io_lib:format("~p.~p.~p.~p", [Octet1, Octet2, Octet3, Octet4]),
+    IpAddress.
 
 %% Seen here - http://www.erlang.org/pipermail/erlang-questions/2006-December/024289.html
 time_zone() ->

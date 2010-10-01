@@ -9,7 +9,6 @@ I would like to include tutorials to take the reader through the step by step pr
 Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
 
 ** Todo
-- [ ] add generic logging
 - [ ] the way we are doing config (passing around ?CONFIG) is dirty
 - [ ] document (edoc see mochiweb for examples, makefile)
 - [ ] do something better with the template 404 and 500 pages
@@ -17,6 +16,7 @@ Thanks for checking this out.  Feel free to send your comments to zach@thehelpfu
 - [ ] actually use status 500 for something
 - [ ] need to clean up the relationship between "handler" and "serve_request"
 ** Done
+- [X] add generic logging
 - [X] yep probably need a content type lol
 - [X] config file
       See - http://spawnlink.com/articles/managing-application-configuration/
