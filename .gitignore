@@ -1,3 +1,4 @@
+site.cfg
 *~
 *.beam
 erl_crash.dump
