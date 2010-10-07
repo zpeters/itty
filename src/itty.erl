@@ -1,3 +1,4 @@
+
 -module(itty).
 -compile([export_all]).
 
@@ -24,6 +25,7 @@ start() ->
 	true ->
 	    config:dump()
     end,
+    template:start(),
     BootString = io_lib:format("Itty ~p starting on port: ~p",
 			       [config:get(version),
 				config:get(port)]),
@@ -74,9 +76,9 @@ handler(ConnectedSocket) ->
 	{ok, {200, Body, MimeType}} ->
 	    Packet = gen_packet(200, Body, MimeType);
 	{error, {404, not_found}} ->
-	    Packet = gen_packet({error, {404, not_found}}, config:get(body_404));
+	    Packet = gen_packet({error, {404, not_found}}, template:get(404));
 	{ error, _Any } ->
-	    Packet = gen_packet({error, {500, not_found}}, config:get(body_500))
+	    Packet = gen_packet({error, {500, not_found}}, template:get(500))
     end,
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
@@ -91,7 +93,7 @@ serve_request(RequestRecord) ->
 	    log_request(RequestRecord, 200, BodyLength),
 	    {ok, {200, FileContents, MimeType}};
 	_ ->
-	    BodyLength = string:len(config:get(body_404)),
+	    BodyLength = string:len(template:get(404)),
 	    log_request(RequestRecord, 404, BodyLength),
 	    {error, {404, not_found}}
     end.
@@ -118,9 +120,9 @@ get_index(Path) ->
 gen_header({error, ResponseCode}, MimeType) ->
     case ResponseCode of
 	{404, not_found} ->
-	    gen_header(404, config:get(body_404), MimeType);
+	    gen_header(404, template:get(404), MimeType);
 	_Other ->
-	    gen_header(500, config:get(body_500), MimeType)
+	    gen_header(500, template:get(500), MimeType)
     end.
 gen_header(ResponseCode, Body, MimeType) ->
     case ResponseCode of
