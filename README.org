@@ -9,6 +9,8 @@ I would like to include tutorials to take the reader through the step by step pr
 Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
 
 ** Todo
+- [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
+      to render when we cannot find the "real" templates
 - [ ] add debug to run functions if debug is set
 - [ ] document (edoc see mochiweb for examples, makefile)
 - [ ] do something better with the template 404 and 500 pages
