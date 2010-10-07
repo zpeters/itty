@@ -4,24 +4,62 @@
 -define(DEFAULT_CONFIG, "application.cfg").
 -define(SITE_CONFIG, "site.cfg").
 
+
 start() ->
-    {ok, DefaultConfig} = file:consult(?DEFAULT_CONFIG),
-    % if there is a local config file load it
-    case test_local_config() of
-	ok ->
-	    {ok, SiteConfig} = file:consult(?SITE_CONFIG),
-	    UpdatedConfig = update_config(DefaultConfig, SiteConfig),
-	    UpdatedConfig;
-	error ->
-	    DefaultConfig
+    io:format("Spawning config...~n"),
+    Pid = spawn(config, loop, [[]]),
+    register(configLoop, Pid),
+    configLoop ! start.
+
+stop() ->
+    io:format("Stopping loop..~n"),
+    configLoop ! stop,
+    unregister(configLoop).
+
+dump() ->
+    configLoop ! dump.
+
+get(Key) ->    
+    configLoop ! {get, Key, self()},
+    receive
+	{error, E} ->
+	    {error, E};
+	Value ->
+	    Value
     end.
 
- get(_Key, []) ->
+loop(Config) ->
+    receive
+	stop ->
+	    ok;
+	start ->
+	    {ok, DefaultConfig} = file:consult(?DEFAULT_CONFIG),
+	    case test_local_config() of
+		ok ->
+		    {ok, SiteConfig} = file:consult(?SITE_CONFIG),
+		    UpdatedConfig = update_config(DefaultConfig, SiteConfig);
+		error ->
+		    UpdatedConfig = DefaultConfig
+	    end,
+	    loop(UpdatedConfig);
+	dump ->
+	    io:format("~p~n", [Config]),
+	    loop(Config);
+	{get, Key, Pid} ->
+	    Pid ! get_key(Key, Config),
+	    loop(Config);
+	Signal ->
+	    io:format("I got signal: ~p~n", [Signal]),
+	    loop(Config)
+    end.
+
+
+ get_key(_Key, []) ->
      {error, not_found};
- get(Key, [{Key, Value} | _Config]) ->
+ get_key(Key, [{Key, Value} | _Config]) ->
      Value;
- get(Key, [{_Other, _Value} | Config]) ->
-     get(Key, Config).
+ get_key(Key, [{_Other, _Value} | Config]) ->
+     get_key(Key, Config).
 
 update_config(Config, []) ->
     Config;

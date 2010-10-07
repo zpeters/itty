@@ -9,13 +9,14 @@ I would like to include tutorials to take the reader through the step by step pr
 Thanks for checking this out.  Feel free to send your comments to zach@thehelpfulhacker.net
 
 ** Todo
-- [ ] everytime config gets called it is reloading (See ?CONFIG) - we need to have this spawn its own module off
+- [ ] add debug to run functions if debug is set
 - [ ] document (edoc see mochiweb for examples, makefile)
 - [ ] do something better with the template 404 and 500 pages
 - [ ] the actual codes for 404/500 appear to be passed around too much, look into this
 - [ ] actually use status 500 for something
 - [ ] need to clean up the relationship between "handler" and "serve_request"
 ** Done
+- [X] everytime config gets called it is reloading (See ?CONFIG) - we need to have this spawn its own module off
 - [X] "site" configs that override application.cfg
 - [X] add generic logging
 - [X] yep probably need a content type lol

@@ -3,7 +3,6 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Defines
--define(CONFIG, config:start()).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% records
@@ -20,11 +19,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
 start() ->
+    config:start(),
+    case config:get(debug) of
+	true ->
+	    config:dump()
+    end,
     BootString = io_lib:format("Itty ~p starting on port: ~p",
-			       [config:get(version, ?CONFIG),
-				config:get(port, ?CONFIG)]),
+			       [config:get(version),
+				config:get(port)]),
     log_event(BootString),
-    do_listen(config:get(port, ?CONFIG), config:get(tcp_options, ?CONFIG), handler).
+    do_listen(config:get(port), config:get(tcp_options), handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Control Functions
@@ -70,15 +74,15 @@ handler(ConnectedSocket) ->
 	{ok, {200, Body, MimeType}} ->
 	    Packet = gen_packet(200, Body, MimeType);
 	{error, {404, not_found}} ->
-	    Packet = gen_packet({error, {404, not_found}}, config:get(body_404, ?CONFIG));
+	    Packet = gen_packet({error, {404, not_found}}, config:get(body_404));
 	{ error, _Any } ->
-	    Packet = gen_packet({error, {500, not_found}}, config:get(body_500, ?CONFIG))
+	    Packet = gen_packet({error, {500, not_found}}, config:get(body_500))
     end,
     gen_tcp:send(ConnectedSocket, Packet),
     gen_tcp:close(ConnectedSocket).
 
 serve_request(RequestRecord) ->
-    Request = config:get(docroot, ?CONFIG) ++ get_index(RequestRecord#http_request.http_path),
+    Request = config:get(docroot) ++ get_index(RequestRecord#http_request.http_path),
     case file:read_file(Request) of
 	{ok, File} ->
 	    FileContents = binary_to_list(File),
@@ -87,7 +91,7 @@ serve_request(RequestRecord) ->
 	    log_request(RequestRecord, 200, BodyLength),
 	    {ok, {200, FileContents, MimeType}};
 	_ ->
-	    BodyLength = string:len(config:get(body_404, ?CONFIG)),
+	    BodyLength = string:len(config:get(body_404)),
 	    log_request(RequestRecord, 404, BodyLength),
 	    {error, {404, not_found}}
     end.
@@ -103,7 +107,7 @@ get_index(Path) ->
     LastChar = lists:sublist(Path,Len,Len),
     case LastChar of 
 	"/" ->
-	    Index = atom_to_list(config:get(directory_index, ?CONFIG)),
+	    Index = atom_to_list(config:get(directory_index)),
 	    NewPath = Path ++ Index;
 	_Any ->
 	    NewPath = Path
@@ -114,9 +118,9 @@ get_index(Path) ->
 gen_header({error, ResponseCode}, MimeType) ->
     case ResponseCode of
 	{404, not_found} ->
-	    gen_header(404, config:get(body_404, ?CONFIG), MimeType);
+	    gen_header(404, config:get(body_404), MimeType);
 	_Other ->
-	    gen_header(500, config:get(body_500, ?CONFIG), MimeType)
+	    gen_header(500, config:get(body_500), MimeType)
     end.
 gen_header(ResponseCode, Body, MimeType) ->
     case ResponseCode of
@@ -145,7 +149,7 @@ gen_packet(Response, Body, MimeType) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility Functions
 log_request(RequestRecord, StatusCode, BodyLength) ->
-    LogFile = config:get(http_logfile, ?CONFIG),
+    LogFile = config:get(http_logfile),
     {Year, Month, Day} = date(),
     {Hour, Minute, Second} = time(),
     LogString = io_lib:format("~s ~p ~p ~s [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p", 
@@ -165,7 +169,7 @@ log_request(RequestRecord, StatusCode, BodyLength) ->
     log(LogString, LogFile).
 
 log_event(String) ->
-    LogFile = config:get(event_logfile, ?CONFIG),
+    LogFile = config:get(event_logfile),
     {Year, Month, Day} = date(),
     {Hour, Minute, Second} = time(),
     LogString = io_lib:format("~p~p~p ~p:~p:~p - ~s",
