@@ -1,21 +1,6 @@
-
 -module(itty).
 -compile([export_all]).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Defines
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% records
--record(http_request,
-	{requestor_ip,
-	 http_path,
-	 http_method,
-	 http_ver_maj,
-	 http_ver_min,
-	 client_identity="-",
-	 client_username="-"
-	 }).
+-include("records.hrl").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% API
@@ -29,7 +14,7 @@ start() ->
     BootString = io_lib:format("Itty ~p starting on port: ~p",
 			       [config:get(version),
 				config:get(port)]),
-    log_event(BootString),
+    log:log_event(BootString),
     do_listen(config:get(port), config:get(tcp_options), handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +25,7 @@ do_listen(Port, Opts, Handler) ->
 	{ ok, ListeningSocket } ->
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
-	    handle_error(E)
+	    { error, E }
     end.
 
 listen_loop(ListeningSocket, Handler) ->
@@ -49,7 +34,7 @@ listen_loop(ListeningSocket, Handler) ->
 	    spawn(node(), ?MODULE, Handler, [ConnectedSocket]),
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
-	    handle_error(E)
+	    { error, E }
     end.
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,11 +75,11 @@ serve_request(RequestRecord) ->
 	    FileContents = binary_to_list(File),
 	    BodyLength = string:len(FileContents),
 	    MimeType = mime:guess_mime(Request),
-	    log_request(RequestRecord, 200, BodyLength),
+	    log:log_request(RequestRecord, 200, BodyLength),
 	    {ok, {200, FileContents, MimeType}};
 	_ ->
 	    BodyLength = string:len(template:get(404)),
-	    log_request(RequestRecord, 404, BodyLength),
+	    log:log_request(RequestRecord, 404, BodyLength),
 	    {error, {404, not_found}}
     end.
 
@@ -147,66 +132,3 @@ gen_packet(Response, Body) ->
 gen_packet(Response, Body, MimeType) ->
     Header = gen_header(Response, Body, MimeType),
     string:concat(Header, Body).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Utility Functions
-log_request(RequestRecord, StatusCode, BodyLength) ->
-    LogFile = config:get(http_logfile),
-    {Year, Month, Day} = date(),
-    {Hour, Minute, Second} = time(),
-    LogString = io_lib:format("~s ~p ~p ~s [~p-~p-~p ~p:~p:~p ~s] \"~p ~p HTTP/~p.~p\" ~p ~p", 
-			      [
-			       ip_tuple_to_string(RequestRecord#http_request.requestor_ip),
-			       RequestRecord#http_request.client_identity,
-			       RequestRecord#http_request.client_username,
-			       ip_tuple_to_string(RequestRecord#http_request.requestor_ip),
-			       Year, Month, Day,
-			       Hour, Minute, Second,
-			       time_zone(),
-			       RequestRecord#http_request.http_method,
-			       RequestRecord#http_request.http_path,
-			       RequestRecord#http_request.http_ver_maj,
-			       RequestRecord#http_request.http_ver_min,
-			       StatusCode, BodyLength]),
-    log(LogString, LogFile).
-
-log_event(String) ->
-    LogFile = config:get(event_logfile),
-    {Year, Month, Day} = date(),
-    {Hour, Minute, Second} = time(),
-    LogString = io_lib:format("~p~p~p ~p:~p:~p - ~s",
-			      [
-			       Year, Month, Day,
-			       Hour, Minute, Second,
-			       String]),
-    log(LogString, LogFile).
-			       
-log(String, File) ->
-    {ok, LogFile} = file:open(File, [append]),
-    io:fwrite(LogFile, "~s~n", [String]),
-    file:close(LogFile).
-
-gen_time() ->
-    {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
-    Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
-    Date.
-
-ip_tuple_to_string(IpTuple) ->
-    {Octet1, Octet2, Octet3, Octet4} = IpTuple,
-    IpAddress = io_lib:format("~p.~p.~p.~p", [Octet1, Octet2, Octet3, Octet4]),
-    IpAddress.
-
-%% Seen here - http://www.erlang.org/pipermail/erlang-questions/2006-December/024289.html
-time_zone() ->
-    Time = erlang:universaltime(),
-    LocalTime = calendar:universal_time_to_local_time(Time),
-    DiffSecs = calendar:datetime_to_gregorian_seconds(LocalTime) -
-	calendar:datetime_to_gregorian_seconds(Time),
-    time_zone((DiffSecs/3600)*100).
-time_zone(Val) when Val < 0 ->
-    io_lib:format("-~4..0w", [trunc(abs(Val))]);
-time_zone(Val) when Val >= 0 ->		           
-    io_lib:format("+~4..0w", [trunc(abs(Val))]).
-
-handle_error(Error) ->
-    io:format("Got error: ~p~n", [Error]).

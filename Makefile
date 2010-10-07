@@ -24,7 +24,7 @@ shell:
 	erl -sname console -pa ebin
 run:
 	make all
-	erl -pa ebin -run itty  -run init stop -noshell      
+	erl -pa ebin -run itty -run init stop -noshell      
 
 ebin:
 	@mkdir ebin
