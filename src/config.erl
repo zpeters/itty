@@ -6,13 +6,11 @@
 
 
 start() ->
-    io:format("Spawning config...~n"),
     Pid = spawn(config, loop, [[]]),
     register(configLoop, Pid),
     configLoop ! start.
 
 stop() ->
-    io:format("Stopping loop..~n"),
     configLoop ! stop,
     unregister(configLoop).
 
@@ -47,9 +45,6 @@ loop(Config) ->
 	    loop(Config);
 	{get, Key, Pid} ->
 	    Pid ! get_key(Key, Config),
-	    loop(Config);
-	Signal ->
-	    io:format("I got signal: ~p~n", [Signal]),
 	    loop(Config)
     end.
 
