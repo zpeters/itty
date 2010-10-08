@@ -11,7 +11,6 @@ Thanks for checking this out.  Feel free to send your comments to zach@thehelpfu
 ** Todo
 - [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
       to render when we cannot find the "real" templates
-- [ ] add debug to run functions if debug is set
 - [ ] document (edoc see mochiweb for examples, makefile)
 - [ ] do something better with the template 404 and 500 pages
 - [ ] the actual codes for 404/500 appear to be passed around too much, look into this
