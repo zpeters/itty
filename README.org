@@ -4,18 +4,36 @@ Itty was written as a way for me to learn erlang.  It's aim is to eventually
 me a complete, but very lean webserver.  The focus is not necessarily on speed, 
 performance or security, but on a clear design that is easy to read through and 
 understand.
-
 ** Eventually
 I would like to include tutorials to take the reader through the step by step
  process of building up the webserver from its embryonic single process, to 
-multiple processes working together to create a functioning webserver
-
+multiple processes working together to create a functioning webserver.
 ** For Now
+For now, itty is very incomplete.  It's configuration isn't super flexible,
+the code is sloppy, and there is still plenty to fix.  It is not necessarily 
+a model of good Erlang, but it is a place to start looking at a simple, working
+webserver.  It is stripped down to mostly its basics, so even if it isn't pretty,
+it should be easily understandable.
+** Thank you
 Thanks for checking this out.  
 Feel free to send your comments to zach@thehelpfulhacker.net
-
-** Todo
-- [ ] blog post about itty
+** Installation and Setup
+*** What you need
+    - Erlang - http://www.erlang.org/download.html
+    - Git - http://git-scm.com/
+    - Some flavor of "make"
+*** Installing
+    - Clone from github.com thusly:
+      "git clone git://github.com/zpeters/itty.git"
+    - Edit 'application.cfg"
+      - set the port (above 1024 if you aren't running as root)
+      - set the "docroot", absolute path with no trailing slash
+      - set the "http_logfile" and "event_logfile"
+    - Make sure 'index.html' exists in your docroot (itty doesn't do directory browsing yet)
+    - "make run"
+    - If all is well (and debugging is on) you will see a quick display of the current config
+      and should be able to see the webserver on the appropriate port
+** Todo 
 - [ ] itty dir browsing
 - [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
       to render when we cannot find the "real" templates
@@ -24,7 +42,7 @@ Feel free to send your comments to zach@thehelpfulhacker.net
 - [ ] the actual codes for 404/500 appear to be passed around too much, look into this
 - [ ] actually use status 500 for something
 - [ ] need to clean up the relationship between "handler" and "serve_request"
-** Done
+*** Done 
 - [X] everytime config gets called it is reloading (See ?CONFIG) - we need to have this spawn its own module off
 - [X] "site" configs that override application.cfg
 - [X] add generic logging
@@ -38,3 +56,4 @@ Feel free to send your comments to zach@thehelpfulhacker.net
 - [X] log in actual CLF - ehhh i implemented CEF (Close Enough Format)
       
       
+     
