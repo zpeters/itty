@@ -1,5 +1,20 @@
 -module(util).
 -compile([export_all]).
+-include_lib("kernel/include/file.hrl").
+
+dirExists(Path) ->
+    case file:read_file_info(Path) of
+	{ok, FileInfo} ->
+	    Type = FileInfo#file_info.type,
+	    case Type of
+		directory ->
+		    true;
+		_Any ->
+		    false
+	    end;
+	{error, _Reason} ->
+	    false
+    end.
 
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),

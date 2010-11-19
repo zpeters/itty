@@ -10,6 +10,7 @@ start() ->
 	true ->
 	    config:dump()
     end,
+    io:format("Verify: ~p~n", [config:verify()]),
     template:start(),
     BootString = io_lib:format("Itty ~p starting on port: ~p",
 			       [config:get(version),
