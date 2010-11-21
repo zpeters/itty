@@ -1,0 +1,5 @@
+* <2010-11-21 Sun>
+** alinpopa - https://github.com/alinpopa
+   Found a little bug in the config logic where itty would crash if debug was set to false
+  
+

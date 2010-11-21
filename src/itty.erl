@@ -8,14 +8,12 @@ start() ->
     config:start(),
     case config:get(debug) of
 	true ->
-	    config:dump()
+	    config:dump();
+	_Any ->
+	    ok
     end,
     io:format("Verify: ~p~n", [config:verify()]),
     template:start(),
-    BootString = io_lib:format("Itty ~p starting on port: ~p",
-			       [config:get(version),
-				config:get(port)]),
-    log:log_event(BootString),
     do_listen(config:get(port), config:get(tcp_options), handler).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
