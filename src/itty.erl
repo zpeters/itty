@@ -6,13 +6,17 @@
 %%% API
 start() ->
     config:start(),
+    BootString = io_lib:format("Itty ~p starting on port: ~p~n",
+			       [config:get(version),
+				config:get(port)]),
+    log:log_event(BootString),
+    io:format(BootString),
     case config:get(debug) of
 	true ->
 	    config:dump();
 	_Any ->
 	    ok
     end,
-    io:format("Verify: ~p~n", [config:verify()]),
     template:start(),
     do_listen(config:get(port), config:get(tcp_options), handler).
 

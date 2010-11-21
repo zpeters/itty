@@ -17,15 +17,6 @@ stop() ->
 dump() ->
     configLoop ! dump.
 
-verify() ->
-    configLoop ! {verify, self()},
-    receive
-	{error, E} ->
-	    {error, E};
-	Value ->
-	    Value
-    end.
-	
 get(Key) ->    
     configLoop ! {get, Key, self()},
     receive
@@ -54,10 +45,6 @@ loop(Config) ->
 	    loop(Config);
 	{get, Key, Pid} ->
 	    Pid ! get_key(Key, Config),
-	    loop(Config);
-	{verify, Pid} ->
-	    Docroot = util:dirExists(config:get(docroot)),
-	    Pid ! Docroot,
 	    loop(Config)
     end.
 
