@@ -38,7 +38,7 @@ Feel free to send your comments to zach@thehelpfulhacker.net
       - have plain dir checking done
       - need to verify write access to log dirs
       - verify port >1024 if not root
-- [ ] itty dir browsing
+- [ ] dir browsing
 - [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
       to render when we cannot find the "real" templates
 - [ ] document (edoc see mochiweb for examples, makefile)
