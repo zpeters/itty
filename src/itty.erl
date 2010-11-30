@@ -123,7 +123,7 @@ gen_header(ResponseCode, Body, MimeType) ->
     end,
     Version = "HTTP/1.0",
     HttpResponse = io_lib:format("~s ~s\r\n", [Version, ResponseCodeString]),
-    Server = "Server: itty/0.1\r\n",
+    Server = io_lib:format("Server: itty/~s\r\n",[config:get(version)]),
     ContentType = io_lib:format("Content-Type: ~s\r\n", [MimeType]),
     ContentLength = io_lib:format("Content-Length: ~p\r\n", [string:len(Body)]),
     Header = io_lib:format("~s~s~s~s\r\n", [HttpResponse, Server, ContentLength, ContentType]),
