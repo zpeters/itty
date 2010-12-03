@@ -16,6 +16,20 @@ dirExists(Path) ->
 	    false
     end.
 
+fileExists(Path) ->
+    case file:read_file_info(Path) of
+	{ok, FileInfo} ->
+	    Type = FileInfo#file_info.type,
+	    case Type of
+		regular ->
+		    true;
+		_Any ->
+		    false
+	    end;
+	{error, _Reason} ->
+	    false
+    end.
+
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),

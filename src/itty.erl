@@ -11,12 +11,16 @@ start() ->
 				config:get(port)]),
     log:log_event(BootString),
     io:format(BootString),
-    case config:get(debug) of
+    io:format("Checking config...~n"),
+    io:format("  > Docroot: ~p~n", [util:dirExists(config:get(docroot))]),
+    case util:dirExists(config:get(docroot)) of 
 	true ->
-	    config:dump();
-	_Any ->
-	    ok
+	    ok;
+	false ->
+	    erlang:error(missing_doc_root)
     end,
+    io:format("  > Http Logfile: ~p~n", [util:fileExists(config:get(http_logfile))]),
+    io:format("  > Event Logfile: ~p~n", [util:fileExists(config:get(event_logfile))]),
     template:start(),
     do_listen(config:get(port), config:get(tcp_options), handler).
 

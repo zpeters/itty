@@ -37,10 +37,10 @@ Feel free to send your comments to zach@thehelpfulhacker.net
     - If all is well (and debugging is on) you will see a quick display of the current config
       and should be able to see the webserver on the appropriate port
 ** Todo 
-- [ ] checking if paths in config file actually exist, if they don't log and error and bail
-      - have plain dir checking done
-      - need to verify write access to log dirs
-      - verify port >1024 if not root
+- [-] checking if paths in config file actually exist, if they don't log and error and bail
+      - [X] have plain dir checking done
+      - [ ] need to verify write access to log dirs
+      - [ ] verify port >1024 if not root
 - [ ] dir browsing
 - [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
       to render when we cannot find the "real" templates
