@@ -2,6 +2,9 @@
 -compile([export_all]).
 -include_lib("kernel/include/file.hrl").
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Directory/File Related
 dirExists(Path) ->
     case file:read_file_info(Path) of
 	{ok, FileInfo} ->
@@ -30,15 +33,12 @@ fileExists(Path) ->
 	    false
     end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Time and Date
 gen_time() ->
     {{Year, Month, Day}, {Hour, Min, Seconds}} = erlang:localtime(),
     Date = io_lib:format("~p~p~p ~p:~p:~p~n", [Year, Month, Day, Hour, Min, Seconds]),
     Date.
-
-ip_tuple_to_string(IpTuple) ->
-    {Octet1, Octet2, Octet3, Octet4} = IpTuple,
-    IpAddress = io_lib:format("~p.~p.~p.~p", [Octet1, Octet2, Octet3, Octet4]),
-    IpAddress.
 
 %% Seen here - http://www.erlang.org/pipermail/erlang-questions/2006-December/024289.html
 time_zone() ->
@@ -51,3 +51,11 @@ time_zone(Val) when Val < 0 ->
     io_lib:format("-~4..0w", [trunc(abs(Val))]);
 time_zone(Val) when Val >= 0 ->		           
     io_lib:format("+~4..0w", [trunc(abs(Val))]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Ip formatting
+
+ip_tuple_to_string(IpTuple) ->
+    {Octet1, Octet2, Octet3, Octet4} = IpTuple,
+    IpAddress = io_lib:format("~p.~p.~p.~p", [Octet1, Octet2, Octet3, Octet4]),
+    IpAddress.

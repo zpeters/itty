@@ -19,8 +19,6 @@ start() ->
 	false ->
 	    erlang:error(missing_doc_root)
     end,
-    io:format("  > Http Logfile: ~p~n", [util:fileExists(config:get(http_logfile))]),
-    io:format("  > Event Logfile: ~p~n", [util:fileExists(config:get(event_logfile))]),
     template:start(),
     do_listen(config:get(port), config:get(tcp_options), handler).
 
