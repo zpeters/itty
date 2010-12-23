@@ -38,6 +38,7 @@ Feel free to send your comments to zach@thehelpfulhacker.net
       and should be able to see the webserver on the appropriate port
 ** Todo 
 - [ ] there is a little bug in the config checking of site.cfg, it doesn't seem to work right if site.cfg is missing
+- [ ] itty / erlang doesn't want to seem to give up the port it is bound to, right away, after closing out...it can take 5-10 sec until you can use the port again
 - [ ] dir browsing
 - [ ] there is a bug in template rendering, need to add absolute paths to config or have a fallback template
       to render when we cannot find the "real" templates
