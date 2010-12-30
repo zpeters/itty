@@ -44,14 +44,11 @@ do_listen(Port, Opts, Handler) ->
     end.
 
 listen_loop(ListeningSocket, Handler) ->
-    log:debug("Entering listen_loop"),
     case gen_tcp:accept(ListeningSocket) of
 	{ ok, ConnectedSocket } ->
-	    log:debug("Accepted external connection spawning handler"),
 	    spawn(node(), ?MODULE, Handler, [ConnectedSocket]),
 	    listen_loop(ListeningSocket, Handler);
 	{ error, E } ->
-	    log:debug("Error accepting ConnectedSocket"),
 	    { error, E }
     end.
 	    
