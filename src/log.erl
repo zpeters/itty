@@ -31,9 +31,24 @@ log_event(String) ->
 			       Year, Month, Day,
 			       Hour, Minute, Second,
 			       String]),
+    case config:get(debug) of
+	true ->
+	    io:format("*** Log *** - ~s~n", [LogString]);
+	false ->
+	    ok
+    end,
     log:log(LogString, LogFile).
 			       
 log(String, File) ->
     {ok, LogFile} = file:open(File, [append]),
     io:fwrite(LogFile, "~s~n", [String]),
     file:close(LogFile).
+
+debug(String) ->
+    case config:get(debug) of
+	true ->
+	    LogString = io_lib:format("*** Debug *** - ~s", [String]),
+	    log_event(LogString);
+	false ->
+	    ok
+    end.
